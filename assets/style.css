@@ -1,0 +1,28 @@
+.widget_rafax_nested_pages .nested-page {
+  list-style: none;
+  margin: 5px 0;
+}
+
+.widget_rafax_nested_pages .nested-page > .toggle-children {
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  fill: #215478;
+}
+
+.widget_rafax_nested_pages .children {
+  margin-left: 10px;
+}
+
+.widget_rafax_nested_pages .children.hidden {
+  display: none;
+}
+
+.widget_rafax_nested_pages a {
+  text-decoration: none;
+  color: #0073aa;
+}
+
+.widget_rafax_nested_pages a:hover {
+  text-decoration: underline;
+}
