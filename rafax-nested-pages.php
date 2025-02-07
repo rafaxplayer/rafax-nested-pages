@@ -5,7 +5,6 @@ Description: Muestra las páginas anidadas de la página actual en un widget.
 Version: 1.2
 Author: rafax
 */
-
 class Rafax_Nested_Pages extends WP_Widget
 {
 
@@ -65,10 +64,11 @@ class Rafax_Nested_Pages extends WP_Widget
         // Obtener el título configurado desde el widget
         $title = !empty($instance['title']) ? $instance['title'] : __('Páginas relacionadas', 'rafax_pages');
         $expand_children = isset($instance['expand_children']) ? (bool) $instance['expand_children'] : false;
-        //error_log('Expand children value: ' . ($expand_children ? 'true' : 'false'));
+		$fallback_pages = !empty($instance['fallback_pages']) ? explode(',', $instance['fallback_pages']) : [];
+        
         echo $args['before_widget'];
         echo $args['before_title'] . esc_html($title) . $args['after_title'];
-
+		
         $has_children = false;
         foreach ($all_pages as $page) {
             if ($page->post_parent == $post->ID) {
@@ -82,7 +82,20 @@ class Rafax_Nested_Pages extends WP_Widget
             echo '<ul>';
             $this->display_sibling_pages($all_pages, $post->post_parent, $post->ID);
             echo '</ul>';
-        } else {
+        } elseif(!$has_children && !$post->post_parent){
+			 echo '<ul>';
+			
+            foreach ($fallback_pages as $page_id) {
+				
+                $page = get_post($page_id);
+                if ($page) {
+                    echo '<li><a href="' . esc_url(get_permalink($page->ID)) . '">' . esc_html($page->post_title) . '</a></li>';
+                }
+            }
+            echo '</ul>';
+		}
+		
+		else {
             echo '<ul>';
             $this->display_nested_pages($all_pages, $post->ID, $expand_children);
             echo '</ul>';
@@ -158,15 +171,13 @@ class Rafax_Nested_Pages extends WP_Widget
         }
     }
 
-
-
-
     // Formulario para opciones del widget (backend)
 
     public function form($instance)
     {
         $title = !empty($instance['title']) ? $instance['title'] : __('Páginas relacionadas', 'rafax_pages');
         $expand_children = !empty($instance['expand_children']) ? (bool) $instance['expand_children'] : false;
+		 $fallback_pages = !empty($instance['fallback_pages']) ? $instance['fallback_pages'] : '';
         ?>
         <p>
             <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Título:', 'rafax_pages'); ?></label>
@@ -180,6 +191,13 @@ class Rafax_Nested_Pages extends WP_Widget
             <label
                 for="<?php echo $this->get_field_id('expand_children'); ?>"><?php _e('Mostrar anidados desplegados por defecto', 'rafax_pages'); ?></label>
         </p>
+<p>
+            <label for="<?php echo $this->get_field_id('fallback_pages'); ?>">
+                <?php _e('Páginas alternativas (IDs separados por coma):', 'rafax_pages'); ?></label>
+            <input class="widefat" id="<?php echo $this->get_field_id('fallback_pages'); ?>"
+                name="<?php echo $this->get_field_name('fallback_pages'); ?>" type="text"
+                value="<?php echo esc_attr($fallback_pages); ?>">
+        </p>
         <?php
     }
 
@@ -187,11 +205,11 @@ class Rafax_Nested_Pages extends WP_Widget
     // Guardar las opciones del widget
     public function update($new_instance, $old_instance)
     {
-        //error_log('Saving expand_children: ' . (!empty($new_instance['expand_children']) ? 'true' : 'false'));
+       
         $instance = [];
         $instance['title'] = (!empty($new_instance['title'])) ? strip_tags($new_instance['title']) : '';
         $instance['expand_children'] = !empty($new_instance['expand_children']) ? 1 : 0;
-
+        $instance['fallback_pages'] = (!empty($new_instance['fallback_pages'])) ? sanitize_text_field($new_instance['fallback_pages']) : '';
         return $instance;
     }
 }

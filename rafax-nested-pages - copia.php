@@ -69,10 +69,24 @@ class Rafax_Nested_Pages extends WP_Widget
         echo $args['before_widget'];
         echo $args['before_title'] . esc_html($title) . $args['after_title'];
 
-        // Mostrar las páginas anidadas
-        echo '<ul>';
-        $this->display_nested_pages($all_pages, $post->ID, $expand_children);
-        echo '</ul>';
+        $has_children = false;
+        foreach ($all_pages as $page) {
+            if ($page->post_parent == $post->ID) {
+                $has_children = true;
+                break;
+            }
+        }
+
+        // Si no tiene hijos, buscar y mostrar las hermanas
+        if (!$has_children && $post->post_parent) {
+            echo '<ul>';
+            $this->display_sibling_pages($all_pages, $post->post_parent, $post->ID);
+            echo '</ul>';
+        } else {
+            echo '<ul>';
+            $this->display_nested_pages($all_pages, $post->ID, $expand_children);
+            echo '</ul>';
+        }
 
         echo $args['after_widget'];
     }
@@ -110,7 +124,8 @@ class Rafax_Nested_Pages extends WP_Widget
             if ($has_children) {
                 echo '<span class="toggle-children"><svg id="Lager_1" style="enable-background:new -265 388.9 64 64; width:20px;height:20px" version="1.1" viewBox="-265 388.9 64 64" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g><path d="M-239.1,407l14.8,15.1c0.3,0.4,0.3,1.2,0,1.6l-14.8,15.1c-0.3,0.4-0.8-0.1-0.8-0.8v-30.2   C-239.8,407.1-239.4,406.7-239.1,407z"/></g></svg></span>'; // Icono desplegable
             }
-            echo '<a href="' . esc_url(get_permalink($page->ID)) . '">' . esc_html($page->post_title) . '</a>';
+            $page_title = $this->get_page_title($page);
+            echo '<a href="' . esc_url(get_permalink($page->ID)) . '">' . esc_html($page_title) . '</a>';
 
             if ($has_children) {
                 echo '<div class="children' . $is_hidden_class . '">';
@@ -121,6 +136,26 @@ class Rafax_Nested_Pages extends WP_Widget
             echo '</li>';
         }
         echo '</ul>';
+    }
+
+    private function get_page_title($page)
+    {
+
+        $custom_title = get_post_meta($page->ID, '_custom_cluster_title', true);
+        return $custom_title ? $custom_title : $page->post_title;
+
+    }
+
+    private function display_sibling_pages($all_pages, $parent_id, $post_id)
+    {
+        foreach ($all_pages as $page) {
+            if ($page->post_parent == $parent_id && $page->ID !== $post_id) {
+                $page_title = $this->get_page_title($page);
+                echo '<li class="sibling-page">';
+                echo '<a href="' . esc_url(get_permalink($page->ID)) . '">' . esc_html($page_title) . '</a>';
+                echo '</li>';
+            }
+        }
     }
 
 
